@@ -154,8 +154,6 @@ ignore_500=args.ignore_upload_errors
 
 linkbase=("https://" if not (args.url.startswith("http://") or args.url.startswith("https://")) else '')+args.url+('' if args.url.endswith('/wiki/') else ('/' if args.url.endswith('/wiki') else ('wiki/' if args.url.endswith('/') else '/wiki/')))
 
-#mearepoo.atlassian.net
-
 
 url=linkbase+"api/v2/pages"
 
@@ -202,7 +200,6 @@ for filepath, filename, filesize in files_to_upload:
     bar.desc=f"Preparing {lpad(filename, max_name_length)}"
     bar.update(0)
     filedata=upload(os.path.splitext(filename)[0].replace('_', ' ').capitalize(), dummy, args.space, args.parent)
-    #time.sleep(1)
     absolute_links.update({filename:filedata["_links"]["webui"]})
     file_ids.update({filename:filedata['id']})
     bar.update(1)
@@ -216,25 +213,20 @@ for filepath, filename, filesize in files_to_upload:
     bar.update(0)
     with open(filepath, 'r', encoding=args.encoding) as f:
         content=f.read()
-        #content=fixFileLinks(content, absolute_links)
-        #content=bs4.BeautifulSoup(content, 'html.parser').prettify()
+        content=fixFileLinks(content, absolute_links)
+        content=bs4.BeautifulSoup(content, 'html.parser').prettify()
         #content=minify_html.minify(content)
-        #print(f"CONTENT FOR {filename}")
-        #print(content)
         formatted_name=os.path.splitext(filename)[0].replace('_', ' ').capitalize()
         if formatted_name in spacepages.keys():
             version=spacepages[formatted_name][2]+1
         else:
             version=2
-        #print(f"V{version}")
         filedata=update(file_ids[filename], formatted_name, content, args.space, version)
-        #time.sleep(1)
         if filedata is None:
             if update(file_ids[filename], formatted_name, failed, args.space, version) is None:
                 failed_uploads.append((filename, False))
             else:
                 failed_uploads.append((filename, True))
-        #print("\n\nsent\n\n")
         else:
             uploaded_files+=1
     bar.update(filesize)
